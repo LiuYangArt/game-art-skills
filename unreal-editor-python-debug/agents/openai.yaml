@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unreal Python Debug"
+  short_description: "用 UnrealEditor-Cmd 和 Python 调试 UE 工程与资产"
+  default_prompt: "Use $unreal-editor-python-debug to inspect a UE project asset with UnrealEditor-Cmd and a Python probe script."

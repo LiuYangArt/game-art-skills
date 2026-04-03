@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yunwu Image Gen"
+  short_description: "Generate local images with Yunwu and save them."
+  default_prompt: "Use $yunwu-image-gen to generate an image from a prompt and save it into the current project."

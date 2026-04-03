@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unreal Custom Node"
+  short_description: "生成可复制的虚幻材质 Custom Node 代码"
+  default_prompt: "Use $unreal-custom-node to generate a copy-pasteable Unreal Engine Custom Node for a stylized dissolve edge."
