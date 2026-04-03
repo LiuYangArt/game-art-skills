@@ -1,0 +1,64 @@
+{
+  "project_slug": "ship-modern-realistic",
+  "project_title": "现代/写实航母",
+  "board_path": "FD_Review/ship.canvas",
+  "assets_dir": "FD_Review/_assets",
+  "generator": "nano-banana",
+  "language": "zh-CN",
+  "generated_at": "2026-04-03T00:00:00Z",
+  "style_summary": "整体方向偏现代写实海军工程设计，优先吸收真实甲板作业逻辑和上层建筑层级。",
+  "must_preserve": [
+    "整体轮廓与镜头角度",
+    "甲板与舰岛的相对位置",
+    "已经锁定的功能区与主要设备落位"
+  ],
+  "topic_blocks": [
+    {
+      "id": "deck-layout",
+      "title": "甲板总体布局 / 标线秩序",
+      "note": "用途：锁定主作业面的分区、滑行路径、停机秩序和安全边界。\n\n观察：这一组更适合定整体节奏，而不是看单件设备。",
+      "link": {
+        "label": "Pinterest: aircraft carrier flight deck layout",
+        "url": "https://www.pinterest.com/search/pins/?q=aircraft%20carrier%20flight%20deck%20layout"
+      },
+      "candidate_count": 12,
+      "filtered_out_count": 9,
+      "selected_count": 3,
+      "selection_rules": {
+        "max": 3,
+        "min_score": 90,
+        "min_must_match_hits": 2,
+        "require_all_match_groups": true,
+        "require_signal_title": true,
+        "reject_on_reject_match": true
+      },
+      "references": [
+        {
+          "title": "Ford deck reference",
+          "source": "pinterest/search",
+          "origin_url": "https://www.pinterest.com/pin/example-1/",
+          "image_url": "https://example.com/deck-1.jpg",
+          "local_path": "FD_Review/_assets/ship_ref_deck_layout_01.jpg",
+          "score": 96.0,
+          "topic_token_hits": ["carrier", "deck", "layout"],
+          "must_match_hits": ["carrier", "deck", "layout"],
+          "reject_hits": [],
+          "matched_groups": [
+            {
+              "index": 1,
+              "tokens": ["carrier", "navy", "ship"],
+              "hits": ["carrier"],
+              "matched": true
+            },
+            {
+              "index": 2,
+              "tokens": ["deck", "flight", "layout", "marking"],
+              "hits": ["deck", "layout"],
+              "matched": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Concept Design Flow"
+  short_description: "Stage-gated concept design in Obsidian"
+  default_prompt: "Use $concept-design-flow to run a staged concept design workflow in Obsidian."

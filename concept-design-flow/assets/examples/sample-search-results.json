@@ -1,0 +1,121 @@
+{
+  "project_slug": "demo-naval-board",
+  "generated_at": "2026-04-03T00:00:00Z",
+  "source_priority": [
+    "pinterest/search",
+    "huaban/search",
+    "tumblr/search"
+  ],
+  "topic_results": [
+    {
+      "id": "deck-layout",
+      "title": "甲板总体布局 / 标线秩序",
+      "search_goal": "锁定甲板分区和停机秩序。",
+      "why_it_matters": "决定整体作业节奏。",
+      "pinterest_query": "aircraft carrier flight deck layout",
+      "pinterest_link": "https://www.pinterest.com/search/pins/?q=aircraft%20carrier%20flight%20deck%20layout",
+      "runs": [
+        {
+          "topic_id": "deck-layout",
+          "topic_title": "甲板总体布局 / 标线秩序",
+          "source": "pinterest/search",
+          "query": "aircraft carrier flight deck layout",
+          "count_requested": 8,
+          "success": true,
+          "error": null,
+          "hint": null,
+          "returned_count": 2
+        }
+      ],
+      "entries": [
+        {
+          "source": "pinterest/search",
+          "query": "aircraft carrier flight deck layout",
+          "rank": 1,
+          "title": "Deck reference 01",
+          "url": "https://www.pinterest.com/pin/demo-1/",
+          "image": "https://example.com/deck-1.jpg",
+          "alt": "flight deck",
+          "blog": null,
+          "tags": [],
+          "score": null,
+          "raw": {
+            "title": "Deck reference 01"
+          }
+        },
+        {
+          "source": "huaban/search",
+          "query": "航母 甲板 布局",
+          "rank": 2,
+          "title": "Deck reference 02",
+          "url": "https://huaban.com/pins/demo-2",
+          "image": "https://example.com/deck-2.jpg",
+          "alt": "carrier deck",
+          "blog": null,
+          "tags": [],
+          "score": 3,
+          "raw": {
+            "title": "Deck reference 02"
+          }
+        }
+      ]
+    },
+    {
+      "id": "island-radar",
+      "title": "雷达桅杆 / 天线层级",
+      "search_goal": "锁定雷达面板、桅杆和维护平台。",
+      "why_it_matters": "决定上层建筑是否可信。",
+      "pinterest_query": "carrier island radar antenna array",
+      "pinterest_link": "https://www.pinterest.com/search/pins/?q=carrier%20island%20radar%20antenna%20array",
+      "runs": [
+        {
+          "topic_id": "island-radar",
+          "topic_title": "雷达桅杆 / 天线层级",
+          "source": "pinterest/search",
+          "query": "carrier island radar antenna array",
+          "count_requested": 8,
+          "success": true,
+          "error": null,
+          "hint": null,
+          "returned_count": 2
+        }
+      ],
+      "entries": [
+        {
+          "source": "pinterest/search",
+          "query": "carrier island radar antenna array",
+          "rank": 1,
+          "title": "Radar reference 01",
+          "url": "https://www.pinterest.com/pin/demo-3/",
+          "image": "https://example.com/radar-1.jpg",
+          "alt": "carrier island radar",
+          "blog": null,
+          "tags": [],
+          "score": null,
+          "raw": {
+            "title": "Radar reference 01"
+          }
+        },
+        {
+          "source": "tumblr/search",
+          "query": "naval radar island warship",
+          "rank": 2,
+          "title": "Radar reference 02",
+          "url": "https://www.tumblr.com/demo/12345",
+          "image": "https://example.com/radar-2.jpg",
+          "alt": "naval radar",
+          "blog": "demo",
+          "tags": [
+            "navy",
+            "radar"
+          ],
+          "score": null,
+          "raw": {
+            "title": "Radar reference 02"
+          }
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

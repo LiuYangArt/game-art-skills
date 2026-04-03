@@ -1,0 +1,74 @@
+{
+  "project_slug": "demo-naval-board",
+  "project_title": "Demo Naval Board",
+  "board_path": "Concept Design/demo/references.canvas",
+  "assets_dir": "Concept Design/demo/assets",
+  "generator": "nano-banana",
+  "language": "zh-CN",
+  "generated_at": "2026-04-03T00:00:00Z",
+  "style_summary": "整体方向偏现代写实舰船设计，以真实甲板与上层建筑结构为锚点。",
+  "must_preserve": [
+    "整体轮廓与镜头角度",
+    "甲板与舰岛相对位置"
+  ],
+  "topic_blocks": [
+    {
+      "id": "deck-layout",
+      "title": "甲板总体布局 / 标线秩序",
+      "note": "用途：锁定甲板分区、滑行路径和停机秩序。\n\n观察：这一组更适合定整体节奏。",
+      "link": {
+        "label": "Pinterest: aircraft carrier flight deck layout",
+        "url": "https://www.pinterest.com/search/pins/?q=aircraft%20carrier%20flight%20deck%20layout"
+      },
+      "candidate_count": 12,
+      "selected_count": 3,
+      "references": [
+        {
+          "title": "Deck reference 01",
+          "source": "pinterest/search",
+          "origin_url": "https://www.pinterest.com/pin/demo-1/",
+          "image_url": "https://example.com/deck-1.jpg",
+          "local_path": "Concept Design/demo/assets/demo_ref_deck_01.jpg",
+          "score": 66.0
+        },
+        {
+          "title": "Deck reference 02",
+          "source": "huaban/search",
+          "origin_url": "https://huaban.com/pins/demo-2",
+          "image_url": "https://example.com/deck-2.jpg",
+          "local_path": "Concept Design/demo/assets/demo_ref_deck_02.jpg",
+          "score": 62.0
+        }
+      ]
+    },
+    {
+      "id": "island-radar",
+      "title": "雷达桅杆 / 天线层级",
+      "note": "用途：锁定雷达面板、桅杆和维护平台之间的主次关系。\n\n观察：这一组更适合做局部细化。",
+      "link": {
+        "label": "Pinterest: carrier island radar antenna array",
+        "url": "https://www.pinterest.com/search/pins/?q=carrier%20island%20radar%20antenna%20array"
+      },
+      "candidate_count": 9,
+      "selected_count": 2,
+      "references": [
+        {
+          "title": "Radar reference 01",
+          "source": "pinterest/search",
+          "origin_url": "https://www.pinterest.com/pin/demo-3/",
+          "image_url": "https://example.com/radar-1.jpg",
+          "local_path": "Concept Design/demo/assets/demo_ref_radar_01.jpg",
+          "score": 65.0
+        },
+        {
+          "title": "Radar reference 02",
+          "source": "tumblr/search",
+          "origin_url": "https://www.tumblr.com/demo/12345",
+          "image_url": "https://example.com/radar-2.jpg",
+          "local_path": "Concept Design/demo/assets/demo_ref_radar_02.jpg",
+          "score": 57.0
+        }
+      ]
+    }
+  ]
+}

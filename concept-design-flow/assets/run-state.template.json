@@ -1,0 +1,27 @@
+{
+  "project_slug": "ship-modern-realistic",
+  "updated_at": "2026-04-03T00:00:00Z",
+  "steps": {
+    "search-runner": {
+      "status": "completed",
+      "updated_at": "2026-04-03T00:00:00Z",
+      "detail": "Completed 2 topics with 0 source errors",
+      "artifacts": [
+        "search-results.json"
+      ]
+    }
+  },
+  "topic_status": {
+    "deck-layout": {
+      "searched": true,
+      "curated": true,
+      "on_canvas": true,
+      "updated_at": "2026-04-03T00:00:00Z"
+    }
+  },
+  "artifacts": [
+    "search-results.json",
+    "selected-refs.json",
+    "references.canvas"
+  ]
+}

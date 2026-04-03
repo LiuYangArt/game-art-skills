@@ -1,0 +1,94 @@
+{
+  "project": {
+    "slug": "ship-modern-realistic",
+    "title": "现代/写实航母",
+    "vault_root": "E:/SF_ActiveDocs/ObsidianVaults/code-dev-vault",
+    "board_path": "FD_Review/ship.canvas",
+    "assets_dir": "FD_Review/_assets",
+    "generator": "nano-banana",
+    "language": "zh-CN"
+  },
+  "source_priority": [
+    "pinterest/search",
+    "huaban/search",
+    "tumblr/search"
+  ],
+  "prompt_context": {
+    "style_summary": "整体方向偏现代写实海军工程设计，优先吸收真实甲板作业逻辑和上层建筑层级。",
+    "must_preserve": [
+      "整体轮廓与镜头角度",
+      "甲板与舰岛的相对位置",
+      "已经锁定的功能区与主要设备落位"
+    ]
+  },
+  "topic_blocks": [
+    {
+      "id": "deck-layout",
+      "title": "甲板总体布局 / 标线秩序",
+      "search_goal": "锁定主作业面的分区、滑行路径、停机秩序和安全边界。",
+      "why_it_matters": "决定甲板整体节奏与后续图生图时的可信度。",
+      "pinterest_query": "aircraft carrier flight deck layout",
+      "must_match": ["carrier", "deck", "flight", "layout", "marking"],
+      "reject_match": ["poster", "wall art", "toy", "model kit"],
+      "must_match_groups": [
+        ["carrier", "ship", "navy"],
+        ["deck", "flight", "layout", "marking"]
+      ],
+      "queries": [
+        {
+          "source": "pinterest/search",
+          "query": "aircraft carrier flight deck layout",
+          "count": 12
+        },
+        {
+          "source": "huaban/search",
+          "query": "航母 甲板 布局",
+          "count": 8
+        }
+      ],
+      "selection": {
+        "max": 3,
+        "min_score": 90,
+        "min_must_match_hits": 2,
+        "require_all_match_groups": true,
+        "require_signal_title": true,
+        "reject_on_reject_match": true
+      }
+    },
+    {
+      "id": "island-radar",
+      "title": "雷达桅杆 / 天线层级",
+      "search_goal": "锁定雷达面板、桅杆和维护平台之间的主次关系。",
+      "why_it_matters": "决定上层建筑是否清晰可信，而不是变成杂乱 kitbash。",
+      "pinterest_query": "carrier island radar antenna array",
+      "must_match": ["carrier", "island", "radar", "antenna", "mast", "platform"],
+      "reject_match": ["interior", "cockpit", "poster", "stock photo", "diagram only"],
+      "must_match_groups": [
+        ["carrier", "ship", "navy", "warship"],
+        ["island", "mast", "platform"],
+        ["radar", "antenna", "sensor"]
+      ],
+      "queries": [
+        {
+          "source": "pinterest/search",
+          "query": "carrier island radar antenna array",
+          "count": 12
+        },
+        {
+          "source": "tumblr/search",
+          "query": "naval radar island warship",
+          "count": 6,
+          "type": "latest"
+        }
+      ],
+      "selection": {
+        "max": 3,
+        "min_score": 92,
+        "min_must_match_hits": 3,
+        "require_all_match_groups": true,
+        "require_signal_title": true,
+        "reject_on_reject_match": true
+      }
+    }
+  ]
+}

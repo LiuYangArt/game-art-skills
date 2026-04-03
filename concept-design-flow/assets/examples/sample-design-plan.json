@@ -1,0 +1,55 @@
+{
+  "project": {
+    "slug": "demo-naval-board",
+    "title": "Demo Naval Board",
+    "vault_root": "E:/DemoVault",
+    "board_path": "Concept Design/demo/references.canvas",
+    "assets_dir": "Concept Design/demo/assets",
+    "generator": "nano-banana",
+    "language": "zh-CN"
+  },
+  "source_priority": [
+    "pinterest/search",
+    "huaban/search",
+    "tumblr/search"
+  ],
+  "prompt_context": {
+    "style_summary": "整体方向偏现代写实舰船设计，以真实甲板与上层建筑结构为锚点。"
+  },
+  "topic_blocks": [
+    {
+      "id": "deck-layout",
+      "title": "甲板总体布局 / 标线秩序",
+      "search_goal": "锁定甲板分区和停机秩序。",
+      "why_it_matters": "决定整体作业节奏。",
+      "pinterest_query": "aircraft carrier flight deck layout",
+      "queries": [
+        {
+          "source": "pinterest/search",
+          "query": "aircraft carrier flight deck layout",
+          "count": 8
+        }
+      ],
+      "selection": {
+        "max": 3
+      }
+    },
+    {
+      "id": "island-radar",
+      "title": "雷达桅杆 / 天线层级",
+      "search_goal": "锁定雷达面板、桅杆和维护平台。",
+      "why_it_matters": "决定上层建筑是否可信。",
+      "pinterest_query": "carrier island radar antenna array",
+      "queries": [
+        {
+          "source": "pinterest/search",
+          "query": "carrier island radar antenna array",
+          "count": 8
+        }
+      ],
+      "selection": {
+        "max": 3
+      }
+    }
+  ]
+}

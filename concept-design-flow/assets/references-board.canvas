@@ -1,0 +1,109 @@
+{
+  "nodes": [
+    {
+      "id": "group-brief",
+      "type": "group",
+      "x": -80,
+      "y": -80,
+      "width": 500,
+      "height": 280,
+      "label": "Brief",
+      "color": "4"
+    },
+    {
+      "id": "group-candidates",
+      "type": "group",
+      "x": 480,
+      "y": -80,
+      "width": 900,
+      "height": 560,
+      "label": "Candidates",
+      "color": "2"
+    },
+    {
+      "id": "group-selected",
+      "type": "group",
+      "x": 1440,
+      "y": -80,
+      "width": 900,
+      "height": 560,
+      "label": "Selected",
+      "color": "4"
+    },
+    {
+      "id": "group-prompts",
+      "type": "group",
+      "x": 480,
+      "y": 560,
+      "width": 900,
+      "height": 360,
+      "label": "Prompt Blocks",
+      "color": "6"
+    },
+    {
+      "id": "text-brief",
+      "type": "text",
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 140,
+      "text": "# Brief Summary\n\n- Objective:\n- Deliverable:\n- Must keep:\n- Must avoid:"
+    },
+    {
+      "id": "text-candidate-notes",
+      "type": "text",
+      "x": 560,
+      "y": 0,
+      "width": 280,
+      "height": 180,
+      "text": "# Candidate Notes\n\nDrop link nodes or file nodes here.\nAdd one short note per candidate."
+    },
+    {
+      "id": "text-selected-notes",
+      "type": "text",
+      "x": 1520,
+      "y": 0,
+      "width": 280,
+      "height": 180,
+      "text": "# Selected Notes\n\nWhy these references survived.\nWhat each one contributes."
+    },
+    {
+      "id": "text-prompt-blocks",
+      "type": "text",
+      "x": 560,
+      "y": 640,
+      "width": 320,
+      "height": 180,
+      "text": "# Prompt Blocks\n\n- form-language\n- materials\n- lighting\n- camera\n- negative"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-brief-to-candidates",
+      "fromNode": "text-brief",
+      "fromSide": "right",
+      "toNode": "text-candidate-notes",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "search against brief"
+    },
+    {
+      "id": "edge-candidates-to-selected",
+      "fromNode": "text-candidate-notes",
+      "fromSide": "right",
+      "toNode": "text-selected-notes",
+      "toSide": "left",
+      "toEnd": "arrow",
+      "label": "shortlist"
+    },
+    {
+      "id": "edge-selected-to-prompts",
+      "fromNode": "text-selected-notes",
+      "fromSide": "bottom",
+      "toNode": "text-prompt-blocks",
+      "toSide": "top",
+      "toEnd": "arrow",
+      "label": "extract blocks"
+    }
+  ]
+}
