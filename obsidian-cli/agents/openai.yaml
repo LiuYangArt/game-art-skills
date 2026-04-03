@@ -1,4 +1,0 @@
-interface:
-  display_name: "Obsidian CLI"
-  short_description: "Use Obsidian command line and URI workflows safely"
-  default_prompt: "Use $obsidian-cli to verify setup and automate note operations from terminal."
