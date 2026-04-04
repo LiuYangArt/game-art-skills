@@ -1,4 +1,4 @@
-# concept-design-flow
+# design-reference-flow
 
 ## 这次分享需要一起带上的内容
 
@@ -46,12 +46,12 @@
 
 ## 当前仓库里的安装方式
 
-把整个 `concept-design-flow/` 目录复制到团队成员自己的 skills 根目录下即可。
+把整个 `design-reference-flow/` 目录复制到团队成员自己的 skills 根目录下即可。
 
 如果团队成员用的是 Codex，通常是：
 
 ```text
-~/.codex/skills/concept-design-flow
+~/.codex/skills/design-reference-flow
 ```
 
 如果团队成员用的是别的 agent，也保持目录完整迁移，不要拆文件。

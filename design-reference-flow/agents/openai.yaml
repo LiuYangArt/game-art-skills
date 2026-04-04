@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Reference Flow"
+  short_description: "Stage-gated design reference workflow in Obsidian"
+  default_prompt: "Use $design-reference-flow to run a staged design reference workflow in Obsidian."

@@ -1,9 +1,9 @@
 ---
-name: concept-design-flow
-description: Use when a user wants guided concept design work with staged approvals, reference-image curation, Obsidian notes or canvas boards, reusable prompt libraries, or iterative image generation grounded in selected references.
+name: design-reference-flow
+description: Use when a user wants structured design-reference work with staged approvals, reference-image curation, Obsidian notes or canvas boards, reusable prompt libraries, or iterative image generation grounded in selected references.
 ---
 
-# Concept Design Flow
+# Design Reference Flow
 
 ## Overview
 

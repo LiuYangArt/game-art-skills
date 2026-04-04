@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lark Whiteboard Write"
+  short_description: "Write curated refs into Lark whiteboards"
+  default_prompt: "Use $lark-whiteboard-write to upload selected local reference images into an embedded Lark whiteboard in the logged-in browser session."

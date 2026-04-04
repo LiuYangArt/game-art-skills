@@ -8,7 +8,7 @@ from workflow_common import default_state, load_state, mark_topic_flags, save_st
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Inspect or update concept-design-flow run state.")
+    parser = argparse.ArgumentParser(description="Inspect or update design-reference-flow run state.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     init_parser = subparsers.add_parser("init", help="Create a new run-state.json file.")
