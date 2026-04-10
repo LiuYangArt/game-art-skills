@@ -4,8 +4,8 @@ Emit split markdown artifacts for Unreal Custom Node workflows.
 
 Default workflow:
 - always write a HLSL markdown file
-- optionally write a single-node paste export markdown file
-- optionally write a full-graph export markdown file
+- always write a single-node paste export markdown file
+- always write a full-graph export markdown file
 
 The script prints absolute output paths so the caller can forward them to the
 user without relying on app-specific clickable links.
@@ -51,13 +51,10 @@ def parse_args() -> argparse.Namespace:
         default="MaterialExpressionCustom_1",
         help="Expression object name for single-node paste export.",
     )
-    parser.add_argument("--emit-paste", action="store_true", help="Also emit a single-node paste export markdown file.")
     parser.add_argument(
-        "--emit-full-graph",
-        action="store_true",
-        help="Also emit a full-graph export markdown file. Requires --layout-file.",
+        "--layout-file",
+        help="Optional layout JSON for full-graph export. Defaults to a custom-node-only layout when omitted.",
     )
-    parser.add_argument("--layout-file", help="Layout JSON for full-graph export.")
     return parser.parse_args()
 
 
@@ -66,7 +63,7 @@ def ensure_parent_dir(path: Path) -> None:
 
 
 def write_hlsl_markdown(code: str, output_path: Path) -> None:
-    output_path.write_text(f"```hlsl\n{code.rstrip()}\n```\n", encoding="utf-8")
+    output_path.write_text(code.rstrip() + "\n", encoding="utf-8")
 
 
 def write_paste_markdown(
@@ -89,14 +86,12 @@ def write_paste_markdown(
         seed=args.seed,
         show_code=True,
     )
-    output_path.write_text(f"```text\n{export_text.rstrip()}\n```\n", encoding="utf-8")
+    output_path.write_text(export_text.rstrip() + "\n", encoding="utf-8")
 
 
 def write_full_graph_markdown(args: argparse.Namespace, output_path: Path) -> None:
-    if not args.layout_file:
-        raise ValueError("--emit-full-graph requires --layout-file")
     export_text = full_graph_export.build_full_graph_export(args)
-    output_path.write_text(f"```text\n{export_text.rstrip()}\n```\n", encoding="utf-8")
+    output_path.write_text(export_text.rstrip() + "\n", encoding="utf-8")
 
 
 def main() -> int:
@@ -114,15 +109,13 @@ def main() -> int:
 
     output_paths = [hlsl_path.resolve()]
 
-    if args.emit_paste:
-        paste_path = output_dir / f"{args.base_name}_custom_node_paste.md"
-        write_paste_markdown(code=code, args=args, output_path=paste_path)
-        output_paths.append(paste_path.resolve())
+    paste_path = output_dir / f"{args.base_name}_custom_node_paste.md"
+    write_paste_markdown(code=code, args=args, output_path=paste_path)
+    output_paths.append(paste_path.resolve())
 
-    if args.emit_full_graph:
-        full_graph_path = output_dir / f"{args.base_name}_full_graph.md"
-        write_full_graph_markdown(args, full_graph_path)
-        output_paths.append(full_graph_path.resolve())
+    full_graph_path = output_dir / f"{args.base_name}_full_graph.md"
+    write_full_graph_markdown(args, full_graph_path)
+    output_paths.append(full_graph_path.resolve())
 
     for path in output_paths:
         print(str(path))

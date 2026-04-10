@@ -57,14 +57,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", default="unreal-custom-node-full-graph", help="Stable seed for GUID generation.")
     parser.add_argument(
         "--layout-file",
-        required=True,
-        help="JSON file that describes surrounding nodes and connections.",
+        help="Optional JSON file that describes surrounding nodes and connections. Defaults to a custom-node-only layout.",
     )
     parser.add_argument("--output-file", help="Optional path to save export text.")
     return parser.parse_args()
 
 
-def read_layout(path: Path) -> dict:
+def read_layout(path: Path | None) -> dict:
+    if path is None:
+        return {"custom_node": {}, "sources": []}
     if not path.exists():
         raise FileNotFoundError(f"Layout file not found: {path}")
     return json.loads(path.read_text(encoding="utf-8"))
@@ -346,7 +347,7 @@ def build_full_graph_export(args: argparse.Namespace) -> str:
     output_type = custom_export.normalize_output_type(args.output_type)
     inputs = custom_export.parse_inputs(args.input)
     additional_outputs = custom_export.parse_additional_outputs(args.additional_output)
-    layout = read_layout(Path(args.layout_file))
+    layout = read_layout(Path(args.layout_file) if args.layout_file else None)
 
     graph_node_name = layout.get("custom_node", {}).get("graph_node_name", "MaterialGraphNode_Custom_1")
     expression_name = layout.get("custom_node", {}).get("expression_name", "MaterialExpressionCustom_1")
