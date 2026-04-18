@@ -1,0 +1,26 @@
+{
+  "server": "47.116.182.134:1666",
+  "charset": "none",
+  "install": {
+    "wingetId": "Perforce.P4V"
+  },
+  "recommendedRoots": {
+    "project": "D:\\Perforce\\Project",
+    "engine": "D:\\Perforce\\Engine"
+  },
+  "workspacePattern": {
+    "project": "{user}_{computer}_{leaf}",
+    "engine": "{user}_{computer}_Engine_{leaf}"
+  },
+  "defaultRoleStreams": {
+    "program": "//streammain/dev",
+    "animation": "//LovecraftMain/Anim",
+    "character": "//LovecraftMain/Char",
+    "environment": "//LovecraftMain/Env",
+    "art": "//LovecraftMain/Art"
+  },
+  "notes": {
+    "engineStreamRequired": true,
+    "separateEngineWorkspaceRecommended": true
+  }
+}

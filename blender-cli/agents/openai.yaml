@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blender CLI"
+  short_description: "Locate Blender executables and run CLI validation workflows"
+  default_prompt: "Use $blender-cli to locate Blender, verify the executable, inspect help output, and run the needed command-line workflow."
