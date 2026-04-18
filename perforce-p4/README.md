@@ -50,11 +50,12 @@
 
 - 服务器地址
 - 用户名
-- 默认 workspace
-- 字符集
 - 是否保存密码
 
 这个文件是本地文件，不会默认上传到仓库。
+
+`workspace/client` 和 `charset` 不应该让用户手填。
+正常情况下让 `p4` 按当前目录、`P4CONFIG`、`P4CLIENT` 或本机已有设置自动判断就可以。
 
 ## 怎么配置 JSON
 
@@ -70,13 +71,11 @@
 1. 找到 `config` 文件夹
 2. 复制 `p4-connection.template.json`
 3. 把复制出来的文件命名成 `p4-connection.json`
-4. 打开后填写这些字段：
+4. 打开后只填写这些字段：
 
 - `server`: 服务器地址
 - `user`: 你的用户名
 - `password`: 你的密码。如果团队不要求长期保存，可以留空
-- `client`: 你的 workspace 名称
-- `charset`: 一般保持默认值就可以
 
 如果你不知道某一项该填什么，不要自己猜，直接问 agent 或负责人。
 

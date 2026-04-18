@@ -1,6 +1,5 @@
 {
   "server": "47.116.182.134:1666",
-  "charset": "none",
   "install": {
     "wingetId": "Perforce.P4V"
   },

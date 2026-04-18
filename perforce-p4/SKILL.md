@@ -20,7 +20,6 @@ The normal command wrapper is [scripts/Invoke-P4.ps1](scripts/Invoke-P4.ps1).
 Use [config/p4-init.defaults.json](config/p4-init.defaults.json) for safe team-shared defaults such as:
 
 - server address
-- charset
 - install package id
 - recommended local root base paths
 - workspace naming patterns
@@ -29,6 +28,8 @@ Use [config/p4-init.defaults.json](config/p4-init.defaults.json) for safe team-s
 Keep secrets out of that file.
 
 Use [config/p4-connection.json](config/p4-connection.json) only for the local machine. It is ignored by git.
+Keep only connection data there: `server`, `user`, and optional saved `password`.
+Do not ask the user to fill `client` or `charset` in that file.
 
 ## Init And Onboarding
 
@@ -70,6 +71,8 @@ pwsh -File .\skills\perforce-p4\scripts\Invoke-P4.ps1 opened
 
 - a local password stored in `config/p4-connection.json`
 - or an existing `p4 login` ticket when `password` is blank
+
+Workspace and charset should come from the active `p4` environment, such as the current working directory, `P4CONFIG`, `P4CLIENT`, or machine-level `p4 set` values.
 
 ## Official Command Reference
 

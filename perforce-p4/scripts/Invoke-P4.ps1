@@ -43,35 +43,20 @@ $profile = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
 $server = Get-ProfileValue -Profile $profile -Name 'server' -Required
 $user = Get-ProfileValue -Profile $profile -Name 'user' -Required
 $password = Get-ProfileValue -Profile $profile -Name 'password'
-$client = Get-ProfileValue -Profile $profile -Name 'client'
-$charset = Get-ProfileValue -Profile $profile -Name 'charset'
 
 $p4 = Get-Command p4 -ErrorAction Stop
 $argumentList = @('-p', $server, '-u', $user)
-
-if (-not [string]::IsNullOrWhiteSpace($client)) {
-    $argumentList += @('-c', $client)
-}
 
 if (-not $P4Args -or $P4Args.Count -eq 0) {
     $P4Args = @('info')
 }
 
 $previousPassword = $env:P4PASSWD
-$previousCharset = $env:P4CHARSET
 $setPassword = -not [string]::IsNullOrWhiteSpace($password)
-$setCharset = -not [string]::IsNullOrWhiteSpace($charset) -and $charset -ne 'none'
 
 try {
     if ($setPassword) {
         $env:P4PASSWD = $password
-    }
-
-    if ($setCharset) {
-        $env:P4CHARSET = $charset
-    }
-    else {
-        Remove-Item Env:P4CHARSET -ErrorAction SilentlyContinue
     }
 
     & $p4.Source @argumentList @P4Args
@@ -85,12 +70,5 @@ finally {
         else {
             $env:P4PASSWD = $previousPassword
         }
-    }
-
-    if ($null -eq $previousCharset) {
-        Remove-Item Env:P4CHARSET -ErrorAction SilentlyContinue
-    }
-    else {
-        $env:P4CHARSET = $previousCharset
     }
 }

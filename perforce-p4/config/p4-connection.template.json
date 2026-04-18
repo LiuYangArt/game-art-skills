@@ -1,7 +1,5 @@
 {
   "server": "47.116.182.134:1666",
   "user": "your-username",
-  "password": "",
-  "client": "",
-  "charset": "none"
+  "password": ""
 }

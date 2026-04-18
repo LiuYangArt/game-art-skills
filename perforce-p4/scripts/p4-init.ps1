@@ -11,7 +11,6 @@ param(
     [string]$EngineRoot,
     [string]$ProjectClient,
     [string]$EngineClient,
-    [string]$Charset,
     [switch]$InstallIfMissing,
     [switch]$SkipLogin,
     [switch]$Sync,
@@ -196,13 +195,6 @@ if ([string]::IsNullOrWhiteSpace($Server)) {
     $Server = '47.116.182.134:1666'
 }
 
-if ([string]::IsNullOrWhiteSpace($Charset)) {
-    $Charset = [string](Get-ConfigValue -Object $defaults -Name 'charset')
-}
-if ([string]::IsNullOrWhiteSpace($Charset)) {
-    $Charset = 'none'
-}
-
 if ([string]::IsNullOrWhiteSpace($User)) {
     throw 'User is required.'
 }
@@ -271,8 +263,6 @@ if ($WriteConnectionConfig -and $PSCmdlet.ShouldProcess($ConnectionConfigPath, '
         server = $Server
         user = $User
         password = if ($PersistPassword) { $Password } else { '' }
-        client = $ProjectClient
-        charset = $Charset
     } | ConvertTo-Json
 
     $configDir = Split-Path -Parent $ConnectionConfigPath
