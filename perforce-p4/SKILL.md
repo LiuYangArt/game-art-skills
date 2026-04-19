@@ -19,13 +19,13 @@ The normal command wrapper is [scripts/Invoke-P4.ps1](scripts/Invoke-P4.ps1).
 
 Use [config/p4-init.defaults.json](config/p4-init.defaults.json) for safe team-shared defaults such as:
 
-- server address
 - install package id
 - recommended local root base paths
 - workspace naming patterns
 - role to stream recommendations
 
 Keep secrets out of that file.
+Do not commit real server addresses to repo-shared defaults or templates. Supply the server through a private onboarding doc, `-Server`, or a local untracked config.
 
 Use [config/p4-connection.json](config/p4-connection.json) only for the local machine. It is ignored by git.
 Keep only connection data there: `server`, `user`, and optional saved `password`.
@@ -39,6 +39,7 @@ When the user says `p4-init`, "初始化 p4", "新人安装 p4", or asks to set 
 2. Then read [references/init-and-onboarding.md](references/init-and-onboarding.md).
 3. Extract fixed information from the doc or defaults file.
 4. Ask only for missing or sensitive values:
+   - server when the onboarding doc or private local defaults do not provide it
    - username
    - password
    - project stream
@@ -52,7 +53,7 @@ When the user says `p4-init`, "初始化 p4", "新人安装 p4", or asks to set 
 Example:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -User liuyang -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:1666 -User liuyang -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
 ```
 
 Use `-WhatIf` for a dry run preview.

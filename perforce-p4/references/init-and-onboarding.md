@@ -24,7 +24,7 @@ Read these first when available:
 
 Expected non-sensitive information from team inputs:
 
-- server address
+- server address from a private onboarding doc or other private team material
 - install method
 - recommended project root base path
 - recommended engine root base path
@@ -36,6 +36,7 @@ Expected non-sensitive information from team inputs:
 
 Only ask the user for what the team inputs do not already answer, especially:
 
+- server, when the onboarding doc or private defaults do not provide it
 - username
 - password
 - project stream
@@ -58,19 +59,19 @@ Only ask the user for what the team inputs do not already answer, especially:
 Typical project-only setup:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -User alice -Password '<secret>' -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
 ```
 
 Project plus engine:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -User alice -Password '<secret>' -ProjectStream //LovecraftMain/Env -EngineStream //SomeDepot/EngineBranch -ProjectRoot D:\Perforce\Project\Env -EngineRoot D:\Perforce\Engine\EngineBranch -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //LovecraftMain/Env -EngineStream //SomeDepot/EngineBranch -ProjectRoot D:\Perforce\Project\Env -EngineRoot D:\Perforce\Engine\EngineBranch -Sync -WriteConnectionConfig
 ```
 
 Preview only:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -User alice -ProjectStream //streammain/dev -WhatIf
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:1666 -User alice -ProjectStream //streammain/dev -WhatIf
 ```
 
 ## Non-Negotiable Rules

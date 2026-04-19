@@ -192,7 +192,7 @@ if ([string]::IsNullOrWhiteSpace($Server)) {
     $Server = [string](Get-ConfigValue -Object $defaults -Name 'server')
 }
 if ([string]::IsNullOrWhiteSpace($Server)) {
-    $Server = '47.116.182.134:1666'
+    throw 'Server is required. Provide -Server or supply it from a private onboarding document or local config.'
 }
 
 if ([string]::IsNullOrWhiteSpace($User)) {

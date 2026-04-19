@@ -35,6 +35,7 @@
 
 - 说一句：`p4-init`
 - 如果团队有 onboarding 文档，把文档链接或路径一起发给 agent
+- 如果没有 onboarding 文档，再把服务器地址单独告诉 agent
 - 你的 Perforce 用户名
 - 你的 Perforce 密码
 - 你的岗位或工种
@@ -53,6 +54,7 @@
 - 是否保存密码
 
 这个文件是本地文件，不会默认上传到仓库。
+模板里不再写死真实 server。
 
 `workspace/client` 和 `charset` 不应该让用户手填。
 正常情况下让 `p4` 按当前目录、`P4CONFIG`、`P4CLIENT` 或本机已有设置自动判断就可以。
@@ -71,9 +73,9 @@
 1. 找到 `config` 文件夹
 2. 复制 `p4-connection.template.json`
 3. 把复制出来的文件命名成 `p4-connection.json`
-4. 打开后只填写这些字段：
+4. 打开后补上这些字段：
 
-- `server`: 服务器地址
+- `server`: 服务器地址，从 onboarding 文档或负责人处获取
 - `user`: 你的用户名
 - `password`: 你的密码。如果团队不要求长期保存，可以留空
 
