@@ -13,6 +13,8 @@
   - 用于在终端里运行 Blender、检查命令行能力、后台执行任务，以及在 Blender 不在 PATH 时定位可执行文件。
 - `design-reference-flow`
   - 用于 staged concept design、参考图搜索整理、Obsidian Canvas 汇总、可复用 prompt library 沉淀，以及基于参考图的迭代式出图。
+- `houdini-vex`
+  - 用于为 Houdini Wrangle 节点编写、解释和修正可直接粘贴的 VEX 代码。
 - `lark-whiteboard-write`
   - 用于通过已登录浏览器，把本地图片上传到飞书文档内嵌白板。
 - `perforce-p4`
@@ -30,6 +32,8 @@
 
 - `design-reference-flow/`
   - 目录里的 `agents/`、`assets/`、`references/`、`scripts/` 都是 skill 的一部分，路径关系不能打散。
+- `houdini-vex/`
+  - `references/` 和 `scripts/` 提供官方文档摘要、常用配方与验证脚本，建议整目录保留。
 - `perforce-p4/`
   - 自带面向团队成员的说明文档和参考资料，建议整个目录一起带上。
 - `unreal-custom-node/`
@@ -52,6 +56,8 @@
   - `design-reference-flow` 的脚本链依赖本地 Python 运行。
 - Blender
   - `blender-cli` 需要本机已安装 Blender，或能在本机定位到 Blender 可执行文件。
+- Houdini
+  - `houdini-vex` 生成与解释 VEX 不强依赖 Houdini，但 `scripts/validate_vex.py` 依赖本机可用的 `hython`。
 - Unreal Engine
   - `unreal-custom-node` 和 `unreal-editor-python-debug` 面向本机已有 UE 工程的场景。
 - Perforce CLI `p4`

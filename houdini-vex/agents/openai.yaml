@@ -1,0 +1,4 @@
+interface:
+  display_name: "Houdini VEX"
+  short_description: "编写并验证 Houdini VEX 代码"
+  default_prompt: "Use $houdini-vex to write and validate a Point Wrangle that adds animated curl noise to pscale and Cd."
