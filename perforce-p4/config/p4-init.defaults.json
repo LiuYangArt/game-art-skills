@@ -9,16 +9,5 @@
   "workspacePattern": {
     "project": "{user}_{computer}_{leaf}",
     "engine": "{user}_{computer}_Engine_{leaf}"
-  },
-  "defaultRoleStreams": {
-    "program": "//streammain/dev",
-    "animation": "//LovecraftMain/Anim",
-    "character": "//LovecraftMain/Char",
-    "environment": "//LovecraftMain/Env",
-    "art": "//LovecraftMain/Art"
-  },
-  "notes": {
-    "engineStreamRequired": true,
-    "separateEngineWorkspaceRecommended": true
   }
 }

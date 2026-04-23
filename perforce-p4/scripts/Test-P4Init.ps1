@@ -44,9 +44,11 @@ try {
     $statePath = Join-Path $tempRoot 'mock-state.json'
     $mockP4Path = Join-Path $tempRoot 'mock-p4.cmd'
     $mockP4ScriptPath = Join-Path $tempRoot 'mock-p4-inner.ps1'
+    $configPath = Join-Path $tempRoot 'p4-connection.json'
     $mockState = [ordered]@{
         trustedServers = @('perforce.example:1666')
-        streams = @('//streammain/Art', '//streammain/Engine')
+        unicodeCounter = 1
+        streams = @('//streams/project-main', '//streams/engine-main')
         clients = @{}
         loginCalls = 0
         syncCalls = @()
@@ -69,6 +71,7 @@ function Save-State {
 $server = ''
 $user = ''
 $client = ''
+$charset = ''
 $commandArgs = New-Object System.Collections.Generic.List[string]
 $rawArgs = @()
 if (-not [string]::IsNullOrWhiteSpace($env:MOCK_P4_RAW_ARGS)) {
@@ -76,29 +79,56 @@ if (-not [string]::IsNullOrWhiteSpace($env:MOCK_P4_RAW_ARGS)) {
 }
 
 for ($i = 0; $i -lt $rawArgs.Count; $i++) {
-    switch ($rawArgs[$i]) {
-        '-p' {
-            $i++
-            $server = $rawArgs[$i]
-        }
-        '-u' {
-            $i++
-            $user = $rawArgs[$i]
-        }
-        '-c' {
-            $i++
-            $client = $rawArgs[$i]
-        }
-        default {
-            $null = $commandArgs.Add($rawArgs[$i])
-        }
+    $token = $rawArgs[$i]
+    if ($token -ceq '-p') {
+        $i++
+        $server = $rawArgs[$i]
+        continue
     }
+
+    if ($token -ceq '-u') {
+        $i++
+        $user = $rawArgs[$i]
+        continue
+    }
+
+    if ($token -ceq '-C') {
+        $i++
+        $charset = $rawArgs[$i]
+        continue
+    }
+
+    if ($token -ceq '-c') {
+        $i++
+        $client = $rawArgs[$i]
+        continue
+    }
+
+    $null = $commandArgs.Add($token)
 }
 
 $state = Load-State
 $command = if ($commandArgs.Count -gt 0) { $commandArgs[0] } else { '' }
 
+if ($command -and $command -ne 'trust') {
+    if ([int]$state.unicodeCounter -eq 0 -and $charset -ne 'none') {
+        Write-Error 'Unicode clients require a unicode enabled server.'
+        exit 1
+    }
+
+    if ([int]$state.unicodeCounter -eq 1 -and $charset -eq 'none') {
+        Write-Error 'Unicode server permits only unicode enabled clients.'
+        exit 1
+    }
+}
+
 switch ($command) {
+    'counter' {
+        if ($commandArgs.Count -ge 2 -and $commandArgs[1] -eq 'unicode') {
+            Write-Output ([string]$state.unicodeCounter)
+            exit 0
+        }
+    }
     'trust' {
         if ($commandArgs.Count -ge 2 -and $commandArgs[1] -eq '-l') {
             foreach ($entry in $state.trustedServers) {
@@ -197,43 +227,73 @@ exit 1
     Set-Content -LiteralPath $mockP4ScriptPath -Value $mockP4 -Encoding utf8
     $mockP4Cmd = "@echo off`r`nset MOCK_P4_RAW_ARGS=%*`r`npwsh -NoProfile -File `"%~dp0mock-p4-inner.ps1`"`r`nexit /b %ERRORLEVEL%`r`n"
     Set-Content -LiteralPath $mockP4Path -Value $mockP4Cmd -Encoding ascii
+    @{
+        server = 'ssl:perforce.example:1666'
+        user = 'alice'
+        password = ''
+    } | ConvertTo-Json | Set-Content -LiteralPath $configPath -Encoding utf8
     $env:MOCK_P4_STATE = $statePath
 
     $workspaceRoot = Join-Path $tempRoot 'workspace-art'
-    $result = & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streammain/Art' -ProjectRoot $workspaceRoot -ProjectClient 'alice_TEST_Art' -SkipLogin
+    $result = & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot $workspaceRoot -ProjectClient 'alice_TEST_Project' -SkipLogin
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable
     Assert-True -Condition (Test-Path -LiteralPath $workspaceRoot) -Message 'Expected workspace root to be created.'
+    Assert-True -Condition ($result.server -eq 'ssl:perforce.example:1666') -Message 'Expected server to fall back from the local connection config.'
+    Assert-True -Condition ($result.user -eq 'alice') -Message 'Expected user to fall back from the local connection config.'
+    Assert-True -Condition ($result.charsetMode -eq 'current-environment') -Message 'Expected unicode server to keep the current charset mode.'
+    Assert-True -Condition $result.serverUnicodeEnabled -Message 'Expected unicode server detection to report true.'
     Assert-True -Condition $result.projectWorkspaceCreated -Message 'Expected project workspace to be reported as created.'
-    Assert-True -Condition ($state.clients.ContainsKey('alice_TEST_Art')) -Message 'Expected client spec to be written.'
+    Assert-True -Condition ($state.clients.ContainsKey('alice_TEST_Project')) -Message 'Expected client spec to be written.'
     Assert-True -Condition (@($state.syncCalls).Count -eq 0) -Message 'Expected no sync call when -Sync is not specified.'
     Assert-True -Condition ($result.recommendedNextStep -match 'P4V') -Message 'Expected next-step guidance to recommend P4V.'
 
+    $nonUnicodeStatePath = Join-Path $tempRoot 'mock-state-nonunicode.json'
+    $nonUnicodeState = [ordered]@{
+        trustedServers = @('perforce.example:1666')
+        unicodeCounter = 0
+        streams = @('//streams/project-main')
+        clients = @{}
+        loginCalls = 0
+        syncCalls = @()
+    } | ConvertTo-Json -Depth 10
+    Set-Content -LiteralPath $nonUnicodeStatePath -Value $nonUnicodeState -Encoding utf8
+    $env:MOCK_P4_STATE = $nonUnicodeStatePath
+    $nonUnicodeRoot = Join-Path $tempRoot 'workspace-nonunicode'
+    $nonUnicodeResult = & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot $nonUnicodeRoot -ProjectClient 'alice_TEST_Project_None' -SkipLogin
+    $nonUnicodeStateReloaded = Get-Content -LiteralPath $nonUnicodeStatePath -Raw | ConvertFrom-Json -AsHashtable
+    Assert-True -Condition ($nonUnicodeResult.charsetMode -eq 'none') -Message 'Expected non-unicode server to switch to -C none.'
+    Assert-True -Condition (-not $nonUnicodeResult.serverUnicodeEnabled) -Message 'Expected non-unicode server detection to report false.'
+    Assert-True -Condition ($nonUnicodeStateReloaded.clients.ContainsKey('alice_TEST_Project_None')) -Message 'Expected client creation to succeed in verified non-unicode mode.'
+
+    $env:MOCK_P4_STATE = $statePath
+
     $syncRoot = Join-Path $tempRoot 'workspace-sync'
-    $syncResult = & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streammain/Art' -ProjectRoot $syncRoot -ProjectClient 'alice_TEST_Art_Sync' -SkipLogin -Sync
+    $syncResult = & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot $syncRoot -ProjectClient 'alice_TEST_Project_Sync' -SkipLogin -Sync
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json -AsHashtable
     Assert-True -Condition (@($state.syncCalls).Count -eq 1) -Message 'Expected exactly one sync call when -Sync is specified.'
     Assert-True -Condition ($syncResult.syncRequested) -Message 'Expected syncRequested to be true when -Sync is specified.'
 
     $state.clients['alice_EXISTS_Art'] = @{
         root = 'F:\Existing'
-        stream = '//streammain/Art'
+        stream = '//streams/project-main'
     }
     $state | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $statePath -Encoding utf8
     Assert-ThrowsLike -Pattern 'Workspace already exists' -Message 'Expected existing workspace guard to throw.' -ScriptBlock {
-        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streammain/Art' -ProjectRoot (Join-Path $tempRoot 'workspace-exists') -ProjectClient 'alice_EXISTS_Art' -SkipLogin | Out-Null
+        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot (Join-Path $tempRoot 'workspace-exists') -ProjectClient 'alice_EXISTS_Art' -SkipLogin | Out-Null
     }
 
     $nonEmptyRoot = Join-Path $tempRoot 'workspace-non-empty'
     New-Item -ItemType Directory -Force -Path $nonEmptyRoot | Out-Null
     Set-Content -LiteralPath (Join-Path $nonEmptyRoot 'keep.txt') -Value 'x' -Encoding utf8
     Assert-ThrowsLike -Pattern 'Workspace root is not empty' -Message 'Expected non-empty root guard to throw.' -ScriptBlock {
-        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streammain/Art' -ProjectRoot $nonEmptyRoot -ProjectClient 'alice_NONEMPTY_Art' -SkipLogin | Out-Null
+        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot $nonEmptyRoot -ProjectClient 'alice_NONEMPTY_Art' -SkipLogin | Out-Null
     }
 
     $untrustedStatePath = Join-Path $tempRoot 'mock-state-untrusted.json'
     $untrustedState = [ordered]@{
         trustedServers = @()
-        streams = @('//streammain/Art')
+        unicodeCounter = 1
+        streams = @('//streams/project-main')
         clients = @{}
         loginCalls = 0
         syncCalls = @()
@@ -241,7 +301,7 @@ exit 1
     Set-Content -LiteralPath $untrustedStatePath -Value $untrustedState -Encoding utf8
     $env:MOCK_P4_STATE = $untrustedStatePath
     Assert-ThrowsLike -Pattern 'SSL trust is not configured' -Message 'Expected SSL trust guard to throw.' -ScriptBlock {
-        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streammain/Art' -ProjectRoot (Join-Path $tempRoot 'workspace-untrusted') -ProjectClient 'alice_UNTRUSTED_Art' -SkipLogin | Out-Null
+        & $scriptPath -P4ExePath $mockP4Path -Server 'ssl:perforce.example:1666' -User 'alice' -ProjectStream '//streams/project-main' -ProjectRoot (Join-Path $tempRoot 'workspace-untrusted') -ProjectClient 'alice_UNTRUSTED_Art' -SkipLogin | Out-Null
     }
 
     'All p4-init tests passed.'

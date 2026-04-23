@@ -6,15 +6,12 @@
 
 它是给 AI agent 用来帮你处理 Perforce 的。
 
-现在这套 skill 的核心逻辑已经迁到 Python；
-PowerShell 脚本主要保留为 Windows 入口和兼容层。
-
 你可以用它做两类事情：
 
-- `p4-init`: 第一次在新电脑上配置 P4
-- 日常使用: 之后继续让 agent 帮你处理同步、workspace、分支、冲突等事情
+- `p4-init`: 第一次在这台电脑上配置 P4
+- 日常使用: 之后继续让 agent 帮你处理同步、workspace、stream、分支、冲突等事情
 
-如果你是新人，最常用的是 `p4-init`。
+如果你是第一次在这台电脑上用 P4，最常用的是 `p4-init`。
 
 ## `p4-init` 是什么用途
 
@@ -24,13 +21,14 @@ PowerShell 脚本主要保留为 Windows 入口和兼容层。
 
 - 检查电脑里有没有安装 P4
 - 如果是 `ssl:` 服务器，先检查 trust
-- 询问你的账号信息
-- 询问你需要同步哪个项目或 stream
+- 检查服务器当前的字符集模式
+- 询问或读取你的连接信息
+- 确认你要使用的 stream
 - 帮你确定本地文件放在哪里
 - 帮你创建 workspace
 - 默认先停在 workspace 创建完成，再问你是否去 P4V 里继续拉取
 - 只有你明确要求时，才会直接走命令行 `sync`
-- 把本机后续要用的本地配置写好
+- 把本机后续要用的本地连接配置写好
 
 你不用自己理解这些技术步骤，按 agent 提问回答就可以。
 
@@ -43,10 +41,9 @@ PowerShell 脚本主要保留为 Windows 入口和兼容层。
 - 如果没有 onboarding 文档，再把服务器地址单独告诉 agent
 - 你的 Perforce 用户名
 - 你的 Perforce 密码
-- 你的岗位或工种
-  例如：程序、动画、角色美术、场景美术
+- 你要用的 stream 名称
 
-如果你不知道自己该用哪个 stream，也没关系，直接告诉 agent 你的岗位，它会先给你推荐，再让你确认。
+如果你还不知道 stream，也没关系。把 onboarding 文档发给 agent，或者让 agent 先帮你列出服务器里的 streams，再选一个。
 
 ## `p4-connection.json` 是什么
 
@@ -59,10 +56,6 @@ PowerShell 脚本主要保留为 Windows 入口和兼容层。
 - 是否保存密码
 
 这个文件是本地文件，不会默认上传到仓库。
-模板里不再写死真实 server。
-
-`workspace/client` 和 `charset` 不应该让用户手填。
-正常情况下让 `p4` 按当前目录、`P4CONFIG`、`P4CLIENT` 或本机已有设置自动判断就可以。
 
 ## 怎么配置 JSON
 
@@ -90,11 +83,10 @@ PowerShell 脚本主要保留为 Windows 入口和兼容层。
 
 - 新电脑第一次配置：优先用 `p4-init`
 - 如果团队有 onboarding 文档：直接发给 agent
-- 如果你不懂 stream、workspace、引擎分支：不要自己猜，直接让 agent 问你并推荐
-- 如果你是美术或其他非技术岗位：只需要告诉 agent 你的岗位和你要做的内容即可
+- 如果你不确定该用哪个 stream：不要自己猜，让 agent 先读取文档或列出 streams
 - 如果项目很大：优先让 agent 建好 workspace，然后去 P4V 里看着进度拉取，体验会更好
 
 ## 一句话理解
 
-把 `p4-init` 理解成“让 agent 帮你把 P4 第一次装好并配好”；
+把 `p4-init` 理解成“让 agent 帮你把这台电脑上的 P4 第一次装好并配好”；
 以后需要继续用 P4 时，再让 agent 帮你处理就行。

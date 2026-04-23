@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import json
 import os
@@ -68,6 +66,30 @@ def build_command(executable: str, args: list[str]) -> list[str]:
     return [executable, *args]
 
 
+def summarize_process_error(completed: subprocess.CompletedProcess[str]) -> str:
+    snippets: list[str] = []
+    for source in (completed.stderr, completed.stdout):
+        for line in source.splitlines():
+            stripped = line.strip()
+            if stripped:
+                snippets.append(stripped)
+            if len(snippets) >= 2:
+                break
+        if len(snippets) >= 2:
+            break
+    return " ".join(snippets)
+
+
+def parse_unicode_counter(lines: list[str]) -> int | None:
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped in {"0", "1"}:
+            return int(stripped)
+    return None
+
+
 def run_process(executable: str, args: list[str], input_text: str | None = None, quiet: bool = False) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(
         build_command(executable, args),
@@ -131,22 +153,64 @@ def resolve_p4_command(explicit_path: str, winget_id: str, install_if_missing: b
     return discovered
 
 
-def invoke_p4(executable: str, server: str, user: str, arguments: list[str], client_name: str = "", allow_failure: bool = False, quiet: bool = False, input_text: str | None = None) -> tuple[list[str], int]:
+def invoke_p4_raw(executable: str, server: str, user: str, arguments: list[str], client_name: str = "", charset: str = "", allow_failure: bool = False, quiet: bool = False, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     command_args = ["-p", server, "-u", user]
+    if charset:
+        command_args.extend(["-C", charset])
     if client_name:
         command_args.extend(["-c", client_name])
     command_args.extend(arguments)
     completed = run_process(executable, command_args, input_text=input_text, quiet=quiet)
-    lines = completed.stdout.splitlines()
     if not allow_failure and completed.returncode != 0:
         raise RuntimeError(f"p4 command failed ({completed.returncode}): {' '.join(command_args)}")
-    return lines, completed.returncode
+    return completed
 
 
-def assert_server_trust(executable: str, server: str, user: str) -> None:
+def invoke_p4(executable: str, server: str, user: str, arguments: list[str], client_name: str = "", charset: str = "", allow_failure: bool = False, quiet: bool = False, input_text: str | None = None) -> tuple[list[str], int]:
+    completed = invoke_p4_raw(
+        executable,
+        server,
+        user,
+        arguments,
+        client_name=client_name,
+        charset=charset,
+        allow_failure=allow_failure,
+        quiet=quiet,
+        input_text=input_text,
+    )
+    return completed.stdout.splitlines(), completed.returncode
+
+
+def inspect_server_charset(executable: str, server: str, user: str) -> tuple[str, bool]:
+    current = invoke_p4_raw(executable, server, user, ["counter", "unicode"], allow_failure=True, quiet=True)
+    current_counter = parse_unicode_counter(current.stdout.splitlines())
+    if current.returncode == 0 and current_counter is not None:
+        return "", bool(current_counter)
+
+    explicit_none = invoke_p4_raw(executable, server, user, ["counter", "unicode"], charset="none", allow_failure=True, quiet=True)
+    none_counter = parse_unicode_counter(explicit_none.stdout.splitlines())
+    if explicit_none.returncode == 0 and none_counter is not None:
+        if none_counter == 0:
+            return "none", False
+
+        current_detail = summarize_process_error(current) or "current client environment failed"
+        raise RuntimeError(
+            "Server is Unicode-enabled, but the current client charset environment is incompatible. "
+            f"Verified with live probe: {current_detail}. Fix P4CHARSET, then retry."
+        )
+
+    current_detail = summarize_process_error(current) or "current client probe failed"
+    none_detail = summarize_process_error(explicit_none) or "-C none probe failed"
+    raise RuntimeError(
+        "Unable to verify the server charset mode with live p4 probes. "
+        f"Current probe: {current_detail}. Explicit -C none probe: {none_detail}."
+    )
+
+
+def assert_server_trust(executable: str, server: str, user: str, charset: str = "") -> None:
     if not server.lower().startswith("ssl:"):
         return
-    output, exit_code = invoke_p4(executable, server, user, ["trust", "-l"], allow_failure=True, quiet=True)
+    output, exit_code = invoke_p4(executable, server, user, ["trust", "-l"], charset=charset, allow_failure=True, quiet=True)
     if exit_code != 0:
         raise RuntimeError(f"Failed to inspect SSL trust for {server}. Run 'p4 -p {server} trust' after verifying the fingerprint, then retry.")
     trusted_server = server[4:]
@@ -155,8 +219,8 @@ def assert_server_trust(executable: str, server: str, user: str) -> None:
         raise RuntimeError(f"SSL trust is not configured for {server}. Run 'p4 -p {server} trust' after verifying the fingerprint, then retry.")
 
 
-def test_client_exists(executable: str, server: str, user: str, client_name: str) -> bool:
-    output, exit_code = invoke_p4(executable, server, user, ["clients", "-e", client_name], allow_failure=True, quiet=True)
+def test_client_exists(executable: str, server: str, user: str, client_name: str, charset: str = "") -> bool:
+    output, exit_code = invoke_p4(executable, server, user, ["clients", "-e", client_name], charset=charset, allow_failure=True, quiet=True)
     if exit_code != 0:
         return False
     pattern = re.compile(rf"^Client\s+{re.escape(client_name)}\b")
@@ -177,19 +241,19 @@ def assert_root_ready(root_path: str, force: bool) -> None:
         raise RuntimeError(f"Workspace root is not empty: {root_path}. Re-run with -Force only after confirming it is safe.")
 
 
-def assert_stream_exists(executable: str, server: str, user: str, stream: str) -> None:
+def assert_stream_exists(executable: str, server: str, user: str, stream: str, charset: str = "") -> None:
     if not stream:
         return
-    _, exit_code = invoke_p4(executable, server, user, ["stream", "-o", stream], allow_failure=True, quiet=True)
+    _, exit_code = invoke_p4(executable, server, user, ["stream", "-o", stream], charset=charset, allow_failure=True, quiet=True)
     if exit_code != 0:
         raise RuntimeError(f"Stream does not exist or is not accessible: {stream}")
 
 
-def create_stream_workspace(executable: str, server: str, user: str, stream: str, client_name: str, root_path: str, label: str, do_sync: bool, force: bool, what_if: bool, what_if_actions: list[dict]) -> dict | None:
+def create_stream_workspace(executable: str, server: str, user: str, stream: str, client_name: str, root_path: str, label: str, do_sync: bool, force: bool, what_if: bool, what_if_actions: list[dict], charset: str = "") -> dict | None:
     if not stream:
         return None
 
-    assert_stream_exists(executable, server, user, stream)
+    assert_stream_exists(executable, server, user, stream, charset=charset)
     assert_root_ready(root_path, force)
 
     if what_if:
@@ -201,22 +265,22 @@ def create_stream_workspace(executable: str, server: str, user: str, stream: str
         )
         return None
 
-    if test_client_exists(executable, server, user, client_name) and not force:
+    if test_client_exists(executable, server, user, client_name, charset=charset) and not force:
         raise RuntimeError(f"Workspace already exists: {client_name}. Re-run with -Force only after confirming overwrite is intended.")
 
     Path(root_path).mkdir(parents=True, exist_ok=True)
 
-    spec_lines, _ = invoke_p4(executable, server, user, ["client", "-S", stream, "-o", client_name])
+    spec_lines, _ = invoke_p4(executable, server, user, ["client", "-S", stream, "-o", client_name], charset=charset)
     spec_text = "\n".join(spec_lines)
     if not re.search(r"(?m)^Root:\s+", spec_text):
         raise RuntimeError(f"Generated client spec for {client_name} does not contain a Root field.")
     spec_text = re.sub(r"(?m)^Root:\s+.*$", lambda _: f"Root:\t{root_path}", spec_text)
-    _, exit_code = invoke_p4(executable, server, user, ["client", "-i"], input_text=spec_text, allow_failure=True)
+    _, exit_code = invoke_p4(executable, server, user, ["client", "-i"], charset=charset, input_text=spec_text, allow_failure=True)
     if exit_code != 0:
         raise RuntimeError(f"Failed to create workspace {client_name}")
 
     if do_sync:
-        _, exit_code = invoke_p4(executable, server, user, ["sync"], client_name=client_name, allow_failure=True)
+        _, exit_code = invoke_p4(executable, server, user, ["sync"], client_name=client_name, charset=charset, allow_failure=True)
         if exit_code != 0:
             raise RuntimeError(f"Initial sync failed for workspace {client_name}")
 
@@ -228,7 +292,7 @@ def create_stream_workspace(executable: str, server: str, user: str, stream: str
     }
 
 
-def maybe_login(executable: str, server: str, user: str, password: str, skip_login: bool, what_if: bool, what_if_actions: list[dict], warnings: list[str]) -> None:
+def maybe_login(executable: str, server: str, user: str, password: str, skip_login: bool, what_if: bool, what_if_actions: list[dict], warnings: list[str], charset: str = "") -> None:
     if skip_login:
         return
     if not password:
@@ -242,7 +306,7 @@ def maybe_login(executable: str, server: str, user: str, password: str, skip_log
             }
         )
         return
-    _, exit_code = invoke_p4(executable, server, user, ["login"], allow_failure=True, input_text=password)
+    _, exit_code = invoke_p4(executable, server, user, ["login"], charset=charset, allow_failure=True, input_text=password)
     if exit_code != 0:
         raise RuntimeError("p4 login failed.")
 
@@ -273,17 +337,21 @@ def maybe_write_connection_config(path: str, server: str, user: str, password: s
 def main() -> int:
     args = parse_args()
     defaults = load_json(args.defaults_path) or {}
+    connection_profile = load_json(args.connection_config_path) or {}
     recommended_roots = get_config_value(defaults, "recommendedRoots") or {}
     workspace_pattern = get_config_value(defaults, "workspacePattern") or {}
     install = get_config_value(defaults, "install") or {}
 
-    server = args.server or get_config_value(defaults, "server") or ""
+    server = args.server or get_config_value(connection_profile, "server") or ""
+    user = args.user or get_config_value(connection_profile, "user") or ""
+    password = args.password or get_config_value(connection_profile, "password") or ""
+
     if not server:
-        raise RuntimeError("Server is required. Provide -Server or supply it from a private onboarding document or local config.")
-    if not args.user:
-        raise RuntimeError("User is required.")
+        raise RuntimeError("Server is required. Provide it in the prompt, onboarding document, or local connection config.")
+    if not user:
+        raise RuntimeError("User is required. Provide it in the prompt or local connection config.")
     if not args.project_stream:
-        raise RuntimeError("ProjectStream is required.")
+        raise RuntimeError("ProjectStream is required. If it is unknown, inspect the onboarding doc or list streams first.")
 
     project_leaf = get_stream_leaf(args.project_stream)
     engine_leaf = get_stream_leaf(args.engine_stream)
@@ -301,20 +369,21 @@ def main() -> int:
     project_client = args.project_client
     if not project_client:
         pattern = get_config_value(workspace_pattern, "project") or "{user}_{computer}_{leaf}"
-        project_client = expand_workspace_pattern(pattern, args.user, project_leaf)
+        project_client = expand_workspace_pattern(pattern, user, project_leaf)
 
     engine_client = args.engine_client
     if args.engine_stream and not engine_client:
         pattern = get_config_value(workspace_pattern, "engine") or "{user}_{computer}_Engine_{leaf}"
-        engine_client = expand_workspace_pattern(pattern, args.user, engine_leaf)
+        engine_client = expand_workspace_pattern(pattern, user, engine_leaf)
 
     warnings: list[str] = []
     what_if_actions: list[dict] = []
 
     winget_id = get_config_value(install, "wingetId") or "Perforce.P4V"
     p4_executable = resolve_p4_command(args.p4_exe_path, winget_id, args.install_if_missing, args.what_if, what_if_actions)
-    assert_server_trust(p4_executable, server, args.user)
-    maybe_login(p4_executable, server, args.user, args.password, args.skip_login, args.what_if, what_if_actions, warnings)
+    assert_server_trust(p4_executable, server, user)
+    charset_mode, server_unicode_enabled = inspect_server_charset(p4_executable, server, user)
+    maybe_login(p4_executable, server, user, password, args.skip_login, args.what_if, what_if_actions, warnings, charset=charset_mode)
 
     if args.sync:
         warnings.append("Command-line sync can take a long time without clear progress. Prefer opening the workspace in P4V unless the user explicitly requested CLI sync.")
@@ -322,7 +391,7 @@ def main() -> int:
     project_workspace = create_stream_workspace(
         executable=p4_executable,
         server=server,
-        user=args.user,
+        user=user,
         stream=args.project_stream,
         client_name=project_client,
         root_path=project_root,
@@ -331,6 +400,7 @@ def main() -> int:
         force=args.force,
         what_if=args.what_if,
         what_if_actions=what_if_actions,
+        charset=charset_mode,
     )
 
     engine_workspace = None
@@ -338,7 +408,7 @@ def main() -> int:
         engine_workspace = create_stream_workspace(
             executable=p4_executable,
             server=server,
-            user=args.user,
+            user=user,
             stream=args.engine_stream,
             client_name=engine_client,
             root_path=engine_root,
@@ -347,13 +417,14 @@ def main() -> int:
             force=args.force,
             what_if=args.what_if,
             what_if_actions=what_if_actions,
+            charset=charset_mode,
         )
 
     maybe_write_connection_config(
         path=args.connection_config_path,
         server=server,
-        user=args.user,
-        password=args.password,
+        user=user,
+        password=password,
         write_connection_config=args.write_connection_config,
         persist_password=args.persist_password,
         what_if=args.what_if,
@@ -363,7 +434,9 @@ def main() -> int:
     result = {
         "p4ExePath": p4_executable,
         "server": server,
-        "user": args.user,
+        "user": user,
+        "charsetMode": charset_mode or "current-environment",
+        "serverUnicodeEnabled": server_unicode_enabled,
         "projectStream": args.project_stream,
         "projectRoot": project_root,
         "projectClient": project_client,
