@@ -2,6 +2,7 @@
 param(
     [string]$DefaultsPath = (Join-Path $PSScriptRoot '..\config\p4-init.defaults.json'),
     [string]$ConnectionConfigPath = (Join-Path $PSScriptRoot '..\config\p4-connection.json'),
+    [string]$P4ExePath,
     [string]$Server,
     [string]$User,
     [string]$Password,
@@ -22,267 +23,122 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Get-ConfigValue {
+function Resolve-PythonCommand {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($python) {
+        return [pscustomobject]@{
+            Executable = $python.Source
+            PrefixArgs = @()
+        }
+    }
+
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py) {
+        return [pscustomobject]@{
+            Executable = $py.Source
+            PrefixArgs = @('-3')
+        }
+    }
+
+    throw 'Python is required to run p4-init. Install Python or ensure `python` or `py` is available on PATH.'
+}
+
+function Add-StringArgument {
     param(
-        [pscustomobject]$Object,
-        [string]$Name
+        [System.Collections.Generic.List[string]]$Arguments,
+        [string]$Name,
+        [string]$Value
     )
 
-    if ($null -eq $Object) {
-        return $null
+    if (-not [string]::IsNullOrWhiteSpace($Value)) {
+        $Arguments.Add($Name)
+        $Arguments.Add($Value)
     }
-
-    $property = $Object.PSObject.Properties[$Name]
-    if ($null -eq $property) {
-        return $null
-    }
-
-    return $property.Value
 }
 
-function Get-StreamLeaf {
-    param([string]$Stream)
-
-    if ([string]::IsNullOrWhiteSpace($Stream)) {
-        return ''
-    }
-
-    return ($Stream.TrimEnd('/') -split '/')[-1]
-}
-
-function Expand-WorkspacePattern {
+function Add-SwitchArgument {
     param(
-        [string]$Pattern,
-        [string]$ResolvedUser,
-        [string]$Leaf
+        [System.Collections.Generic.List[string]]$Arguments,
+        [string]$Name,
+        [bool]$Enabled
     )
 
-    if ([string]::IsNullOrWhiteSpace($Pattern)) {
-        return ''
-    }
-
-    return $Pattern.Replace('{user}', $ResolvedUser).Replace('{computer}', $env:COMPUTERNAME).Replace('{leaf}', $Leaf)
-}
-
-function Ensure-P4Installed {
-    param([string]$WingetId)
-
-    $command = Get-Command p4 -ErrorAction SilentlyContinue
-    if ($command) {
-        return $command
-    }
-
-    if (-not $InstallIfMissing) {
-        throw 'p4 was not found on PATH. Re-run with -InstallIfMissing or install Perforce.P4V first.'
-    }
-
-    if ([string]::IsNullOrWhiteSpace($WingetId)) {
-        $WingetId = 'Perforce.P4V'
-    }
-
-    if ($PSCmdlet.ShouldProcess($WingetId, 'Install P4V with winget')) {
-        & winget install -e --id $WingetId
-        if ($LASTEXITCODE -ne 0) {
-            throw 'winget install failed.'
-        }
-    }
-
-    $command = Get-Command p4 -ErrorAction SilentlyContinue
-    if (-not $command) {
-        throw 'p4 is still unavailable after install attempt.'
-    }
-
-    return $command
-}
-
-function Test-ClientExists {
-    param(
-        [string]$P4Exe,
-        [string]$ResolvedServer,
-        [string]$ResolvedUser,
-        [string]$ClientName
-    )
-
-    $output = & $P4Exe -p $ResolvedServer -u $ResolvedUser clients -e $ClientName 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        return $false
-    }
-
-    return ($output | Where-Object { $_ -match ('^Client\s+' + [regex]::Escape($ClientName) + '\b') }).Count -gt 0
-}
-
-function Assert-RootReady {
-    param([string]$RootPath)
-
-    if ([string]::IsNullOrWhiteSpace($RootPath)) {
-        throw 'Workspace root is required.'
-    }
-
-    if (-not (Test-Path -LiteralPath $RootPath)) {
-        return
-    }
-
-    $items = Get-ChildItem -LiteralPath $RootPath -Force
-    if ($items.Count -gt 0 -and -not $Force) {
-        throw "Workspace root is not empty: $RootPath. Re-run with -Force only after confirming it is safe."
+    if ($Enabled) {
+        $Arguments.Add($Name)
     }
 }
 
-function New-StreamWorkspace {
-    param(
-        [string]$P4Exe,
-        [string]$ResolvedServer,
-        [string]$ResolvedUser,
-        [string]$Stream,
-        [string]$ClientName,
-        [string]$RootPath,
-        [string]$Label,
-        [switch]$DoSync
-    )
+$python = Resolve-PythonCommand
+$pythonScriptPath = Join-Path $PSScriptRoot 'p4-init.py'
 
-    if ([string]::IsNullOrWhiteSpace($Stream)) {
-        return
+if (-not (Test-Path -LiteralPath $pythonScriptPath)) {
+    throw "Python implementation not found: $pythonScriptPath"
+}
+
+$launchArgs = [System.Collections.Generic.List[string]]::new()
+foreach ($prefixArg in $python.PrefixArgs) {
+    $launchArgs.Add($prefixArg)
+}
+
+$launchArgs.Add($pythonScriptPath)
+Add-StringArgument -Arguments $launchArgs -Name '--defaults-path' -Value $DefaultsPath
+Add-StringArgument -Arguments $launchArgs -Name '--connection-config-path' -Value $ConnectionConfigPath
+Add-StringArgument -Arguments $launchArgs -Name '--p4-exe-path' -Value $P4ExePath
+Add-StringArgument -Arguments $launchArgs -Name '--server' -Value $Server
+Add-StringArgument -Arguments $launchArgs -Name '--user' -Value $User
+Add-StringArgument -Arguments $launchArgs -Name '--password' -Value $Password
+Add-StringArgument -Arguments $launchArgs -Name '--project-stream' -Value $ProjectStream
+Add-StringArgument -Arguments $launchArgs -Name '--engine-stream' -Value $EngineStream
+Add-StringArgument -Arguments $launchArgs -Name '--project-root' -Value $ProjectRoot
+Add-StringArgument -Arguments $launchArgs -Name '--engine-root' -Value $EngineRoot
+Add-StringArgument -Arguments $launchArgs -Name '--project-client' -Value $ProjectClient
+Add-StringArgument -Arguments $launchArgs -Name '--engine-client' -Value $EngineClient
+Add-SwitchArgument -Arguments $launchArgs -Name '--install-if-missing' -Enabled ([bool]$InstallIfMissing)
+Add-SwitchArgument -Arguments $launchArgs -Name '--skip-login' -Enabled ([bool]$SkipLogin)
+Add-SwitchArgument -Arguments $launchArgs -Name '--sync' -Enabled ([bool]$Sync)
+Add-SwitchArgument -Arguments $launchArgs -Name '--write-connection-config' -Enabled ([bool]$WriteConnectionConfig)
+Add-SwitchArgument -Arguments $launchArgs -Name '--persist-password' -Enabled ([bool]$PersistPassword)
+Add-SwitchArgument -Arguments $launchArgs -Name '--force' -Enabled ([bool]$Force)
+Add-SwitchArgument -Arguments $launchArgs -Name '--what-if' -Enabled ([bool]$WhatIfPreference)
+
+$output = & $python.Executable @launchArgs 2>&1
+$exitCode = $LASTEXITCODE
+if ($exitCode -ne 0) {
+    $message = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+    if ([string]::IsNullOrWhiteSpace($message)) {
+        $message = "p4-init.py failed with exit code $exitCode."
     }
+    throw $message
+}
 
-    Assert-RootReady -RootPath $RootPath
+try {
+    $json = ($output | ForEach-Object { $_.ToString() }) -join [Environment]::NewLine
+    $result = $json | ConvertFrom-Json
+}
+catch {
+    throw "Failed to parse JSON output from p4-init.py. Raw output: $json"
+}
 
-    if ($PSCmdlet.ShouldProcess($ClientName, "Create $Label workspace for $Stream at $RootPath")) {
-        if ((Test-ClientExists -P4Exe $P4Exe -ResolvedServer $ResolvedServer -ResolvedUser $ResolvedUser -ClientName $ClientName) -and -not $Force) {
-            throw "Workspace already exists: $ClientName. Re-run with -Force only after confirming overwrite is intended."
-        }
-
-        New-Item -ItemType Directory -Force -Path $RootPath | Out-Null
-
-        $specLines = & $P4Exe -p $ResolvedServer -u $ResolvedUser client -S $Stream -o $ClientName
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to generate client spec for $ClientName"
-        }
-
-        $specText = [string]::Join("`n", $specLines)
-        if ($specText -notmatch '(?m)^Root:\s+') {
-            throw "Generated client spec for $ClientName does not contain a Root field."
-        }
-
-        $specText = [regex]::Replace($specText, '(?m)^Root:\s+.*$', "Root: $RootPath")
-        $specText | & $P4Exe -p $ResolvedServer -u $ResolvedUser client -i
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to create workspace $ClientName"
-        }
-
-        if ($DoSync) {
-            & $P4Exe -p $ResolvedServer -u $ResolvedUser -c $ClientName sync
-            if ($LASTEXITCODE -ne 0) {
-                throw "Initial sync failed for workspace $ClientName"
-            }
+if ($result.PSObject.Properties.Name -contains 'warnings') {
+    foreach ($warning in @($result.warnings)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$warning)) {
+            Write-Warning $warning
         }
     }
 }
 
-$defaults = $null
-$resolvedDefaults = Resolve-Path -LiteralPath $DefaultsPath -ErrorAction SilentlyContinue
-if ($resolvedDefaults) {
-    $defaults = Get-Content -LiteralPath $resolvedDefaults.Path -Raw | ConvertFrom-Json
-}
+if ($result.PSObject.Properties.Name -contains 'whatIfActions') {
+    foreach ($action in @($result.whatIfActions)) {
+        if ($null -eq $action) {
+            continue
+        }
 
-$recommendedRoots = Get-ConfigValue -Object $defaults -Name 'recommendedRoots'
-$workspacePattern = Get-ConfigValue -Object $defaults -Name 'workspacePattern'
-$install = Get-ConfigValue -Object $defaults -Name 'install'
-
-if ([string]::IsNullOrWhiteSpace($Server)) {
-    $Server = [string](Get-ConfigValue -Object $defaults -Name 'server')
-}
-if ([string]::IsNullOrWhiteSpace($Server)) {
-    throw 'Server is required. Provide -Server or supply it from a private onboarding document or local config.'
-}
-
-if ([string]::IsNullOrWhiteSpace($User)) {
-    throw 'User is required.'
-}
-if ([string]::IsNullOrWhiteSpace($ProjectStream)) {
-    throw 'ProjectStream is required.'
-}
-
-$projectLeaf = Get-StreamLeaf -Stream $ProjectStream
-$engineLeaf = Get-StreamLeaf -Stream $EngineStream
-
-if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
-    $projectBase = [string](Get-ConfigValue -Object $recommendedRoots -Name 'project')
-    if ([string]::IsNullOrWhiteSpace($projectBase)) {
-        $projectBase = 'D:\Perforce\Project'
-    }
-    $ProjectRoot = Join-Path $projectBase $projectLeaf
-}
-
-if (-not [string]::IsNullOrWhiteSpace($EngineStream) -and [string]::IsNullOrWhiteSpace($EngineRoot)) {
-    $engineBase = [string](Get-ConfigValue -Object $recommendedRoots -Name 'engine')
-    if ([string]::IsNullOrWhiteSpace($engineBase)) {
-        $engineBase = 'D:\Perforce\Engine'
-    }
-    $EngineRoot = Join-Path $engineBase $engineLeaf
-}
-
-if ([string]::IsNullOrWhiteSpace($ProjectClient)) {
-    $pattern = [string](Get-ConfigValue -Object $workspacePattern -Name 'project')
-    if ([string]::IsNullOrWhiteSpace($pattern)) {
-        $pattern = '{user}_{computer}_{leaf}'
-    }
-    $ProjectClient = Expand-WorkspacePattern -Pattern $pattern -ResolvedUser $User -Leaf $projectLeaf
-}
-
-if (-not [string]::IsNullOrWhiteSpace($EngineStream) -and [string]::IsNullOrWhiteSpace($EngineClient)) {
-    $pattern = [string](Get-ConfigValue -Object $workspacePattern -Name 'engine')
-    if ([string]::IsNullOrWhiteSpace($pattern)) {
-        $pattern = '{user}_{computer}_Engine_{leaf}'
-    }
-    $EngineClient = Expand-WorkspacePattern -Pattern $pattern -ResolvedUser $User -Leaf $engineLeaf
-}
-
-$wingetId = [string](Get-ConfigValue -Object $install -Name 'wingetId')
-$p4 = Ensure-P4Installed -WingetId $wingetId
-
-if (-not $SkipLogin) {
-    if ([string]::IsNullOrWhiteSpace($Password)) {
-        Write-Warning 'No password provided. The script will rely on an existing p4 login ticket.'
-    }
-    elseif ($PSCmdlet.ShouldProcess("$User@$Server", 'Run p4 login')) {
-        $Password | & $p4.Source -p $Server -u $User login
-        if ($LASTEXITCODE -ne 0) {
-            throw 'p4 login failed.'
+        $description = [string]$action.description
+        $target = [string]$action.target
+        if (-not [string]::IsNullOrWhiteSpace($description) -and -not [string]::IsNullOrWhiteSpace($target)) {
+            Write-Host "What if: Performing the operation `"$description`" on target `"$target`"."
         }
     }
 }
 
-New-StreamWorkspace -P4Exe $p4.Source -ResolvedServer $Server -ResolvedUser $User -Stream $ProjectStream -ClientName $ProjectClient -RootPath $ProjectRoot -Label 'project' -DoSync:$Sync
-
-if (-not [string]::IsNullOrWhiteSpace($EngineStream)) {
-    New-StreamWorkspace -P4Exe $p4.Source -ResolvedServer $Server -ResolvedUser $User -Stream $EngineStream -ClientName $EngineClient -RootPath $EngineRoot -Label 'engine' -DoSync:$Sync
-}
-
-if ($WriteConnectionConfig -and $PSCmdlet.ShouldProcess($ConnectionConfigPath, 'Write local p4 connection config')) {
-    $profile = [ordered]@{
-        server = $Server
-        user = $User
-        password = if ($PersistPassword) { $Password } else { '' }
-    } | ConvertTo-Json
-
-    $configDir = Split-Path -Parent $ConnectionConfigPath
-    if (-not (Test-Path -LiteralPath $configDir)) {
-        New-Item -ItemType Directory -Force -Path $configDir | Out-Null
-    }
-
-    Set-Content -LiteralPath $ConnectionConfigPath -Value $profile -Encoding utf8
-}
-
-[pscustomobject]@{
-    server = $Server
-    user = $User
-    projectStream = $ProjectStream
-    projectRoot = $ProjectRoot
-    projectClient = $ProjectClient
-    engineStream = $EngineStream
-    engineRoot = $EngineRoot
-    engineClient = $EngineClient
-    wroteConnectionConfig = [bool]$WriteConnectionConfig
-    persistedPassword = [bool]$PersistPassword
-    syncRequested = [bool]$Sync
-}
+$result | Select-Object * -ExcludeProperty warnings, whatIfActions

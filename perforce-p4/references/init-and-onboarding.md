@@ -9,9 +9,10 @@ From the earlier design discussion, the stable workflow is:
 1. Read team defaults and any onboarding doc first.
 2. Ask only for missing or sensitive fields.
 3. Prefer `p4 login` ticket flow over storing passwords in JSON.
-4. Create project workspace first.
-5. Only create engine workspace when the engine stream is explicitly known.
-6. Only sync after the user confirmed the target stream and local path.
+4. For `ssl:` servers, verify trust state before login or workspace creation.
+5. Create project workspace first.
+6. Only create engine workspace when the engine stream is explicitly known.
+7. After creating the workspace, prefer handing off to P4V for the actual sync unless the user explicitly asked for command-line `sync`.
 
 ## Inputs
 
@@ -51,21 +52,28 @@ Only ask the user for what the team inputs do not already answer, especially:
 3. Reconcile the two sources. If they conflict, ask the user which one wins.
 4. Ask only for missing or sensitive values.
 5. If engine stream is still unknown, stop and ask. Do not guess.
-6. Run [scripts/p4-init.ps1](../scripts/p4-init.ps1).
+6. Run [scripts/p4-init.ps1](../scripts/p4-init.ps1) without `-Sync` by default.
 7. Summarize the final server, stream, local root, and workspace names back to the user.
+8. Ask whether the user wants to continue syncing in P4V. Only use `-Sync` if they explicitly want command-line sync.
 
 ## Script Usage Pattern
 
 Typical project-only setup:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //streammain/dev -WriteConnectionConfig
 ```
 
 Project plus engine:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //LovecraftMain/Env -EngineStream //SomeDepot/EngineBranch -ProjectRoot D:\Perforce\Project\Env -EngineRoot D:\Perforce\Engine\EngineBranch -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //LovecraftMain/Env -EngineStream //SomeDepot/EngineBranch -ProjectRoot D:\Perforce\Project\Env -EngineRoot D:\Perforce\Engine\EngineBranch -WriteConnectionConfig
+```
+
+Only when the user explicitly wants command-line sync:
+
+```powershell
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -InstallIfMissing -Server perforce.example:1666 -User alice -Password '<secret>' -ProjectStream //streammain/dev -Sync
 ```
 
 Preview only:
@@ -80,4 +88,5 @@ pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:166
 - Do not store the password unless the user explicitly asked for persistent local storage.
 - Do not overwrite an existing non-empty workspace root unless the user explicitly confirmed and you use `-Force`.
 - Do not create or sync workspaces into a path the user has not confirmed.
-- For very large projects, treat `-Sync` as a confirmation point, not an automatic default.
+- For very large projects, treat `-Sync` as an explicit opt-in, not an automatic default.
+- When the workspace is ready, prefer telling the user to continue in P4V so they can see sync progress.

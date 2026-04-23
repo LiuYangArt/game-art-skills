@@ -8,67 +8,70 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Get-ProfileValue {
-    param(
-        [pscustomobject]$Profile,
-        [string]$Name,
-        [switch]$Required
-    )
-
-    $property = $Profile.PSObject.Properties[$Name]
-    if ($null -eq $property) {
-        if ($Required) {
-            throw "Missing required field '$Name' in $resolvedConfigPath"
+function Resolve-PythonCommand {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($python) {
+        return [pscustomobject]@{
+            Executable = $python.Source
+            PrefixArgs = @()
         }
-
-        return ''
     }
 
-    $value = $property.Value
-    if ($Required -and [string]::IsNullOrWhiteSpace([string]$value)) {
-        throw "Missing required field '$Name' in $resolvedConfigPath"
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py) {
+        return [pscustomobject]@{
+            Executable = $py.Source
+            PrefixArgs = @('-3')
+        }
     }
 
-    return [string]$value
+    throw 'Python is required to run Invoke-P4. Install Python or ensure `python` or `py` is available on PATH.'
 }
 
-$resolvedConfig = Resolve-Path -LiteralPath $ConfigPath -ErrorAction SilentlyContinue
-if (-not $resolvedConfig) {
-    throw "Connection profile not found: $ConfigPath. Run scripts\\p4-init.ps1 or copy config\\p4-connection.template.json to config\\p4-connection.json first."
+$python = Resolve-PythonCommand
+$pythonScriptPath = Join-Path $PSScriptRoot 'Invoke-P4.py'
+
+if (-not (Test-Path -LiteralPath $pythonScriptPath)) {
+    throw "Python implementation not found: $pythonScriptPath"
 }
 
-$resolvedConfigPath = $resolvedConfig.Path
-$profile = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
-
-$server = Get-ProfileValue -Profile $profile -Name 'server' -Required
-$user = Get-ProfileValue -Profile $profile -Name 'user' -Required
-$password = Get-ProfileValue -Profile $profile -Name 'password'
-
-$p4 = Get-Command p4 -ErrorAction Stop
-$argumentList = @('-p', $server, '-u', $user)
-
-if (-not $P4Args -or $P4Args.Count -eq 0) {
-    $P4Args = @('info')
+$launchArgs = [System.Collections.Generic.List[string]]::new()
+foreach ($prefixArg in $python.PrefixArgs) {
+    $launchArgs.Add($prefixArg)
 }
 
-$previousPassword = $env:P4PASSWD
-$setPassword = -not [string]::IsNullOrWhiteSpace($password)
-
-try {
-    if ($setPassword) {
-        $env:P4PASSWD = $password
+$launchArgs.Add($pythonScriptPath)
+$launchArgs.Add('--config-path')
+$launchArgs.Add($ConfigPath)
+if ($P4Args -and $P4Args.Count -gt 0) {
+    $launchArgs.Add('--')
+    foreach ($arg in $P4Args) {
+        $launchArgs.Add($arg)
     }
+}
 
-    & $p4.Source @argumentList @P4Args
+$json = & $python.Executable @launchArgs
+if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
-finally {
-    if ($setPassword) {
-        if ($null -eq $previousPassword) {
-            Remove-Item Env:P4PASSWD -ErrorAction SilentlyContinue
-        }
-        else {
-            $env:P4PASSWD = $previousPassword
-        }
-    }
+
+try {
+    $result = $json | ConvertFrom-Json
 }
+catch {
+    throw "Failed to parse JSON output from Invoke-P4.py. Raw output: $json"
+}
+
+if ([string]$result.status -eq 'error') {
+    throw [string]$result.message
+}
+
+if (-not [string]::IsNullOrEmpty([string]$result.stdout)) {
+    [Console]::Out.Write([string]$result.stdout)
+}
+
+if (-not [string]::IsNullOrEmpty([string]$result.stderr)) {
+    [Console]::Error.Write([string]$result.stderr)
+}
+
+exit ([int]$result.exitCode)

@@ -14,6 +14,7 @@ This skill now supports two modes:
 
 The init flow is documented in [references/init-and-onboarding.md](references/init-and-onboarding.md).
 The normal command wrapper is [scripts/Invoke-P4.ps1](scripts/Invoke-P4.ps1).
+The checked-in PowerShell scripts are thin Windows launchers; the durable command logic lives in Python.
 
 ## Shared Defaults
 
@@ -47,16 +48,24 @@ When the user says `p4-init`, "初始化 p4", "新人安装 p4", or asks to set 
    - local roots
    - workspace names
 5. Prefer `p4 login` ticket flow. Do not persist the password unless the user explicitly asks.
-6. Run [scripts/p4-init.ps1](scripts/p4-init.ps1) to execute install, login, workspace creation, optional sync, and optional local config generation.
-7. If engine branch or stream is not known, stop and ask. Do not guess.
+6. Run [scripts/p4-init.ps1](scripts/p4-init.ps1) to execute install, trust check, login, workspace creation, optional sync, and optional local config generation.
+7. After the workspace is created, default to asking the user whether they want to continue syncing in P4V. For large workspaces, prefer P4V over command-line `p4 sync`.
+8. Only pass `-Sync` when the user explicitly asked for command-line sync.
+9. If engine branch or stream is not known, stop and ask. Do not guess.
 
 Example:
 
 ```powershell
-pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:1666 -User liuyang -ProjectStream //streammain/dev -Sync -WriteConnectionConfig
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:1666 -User liuyang -ProjectStream //streammain/dev -WriteConnectionConfig
 ```
 
 Use `-WhatIf` for a dry run preview.
+
+If the user explicitly wants CLI sync:
+
+```powershell
+pwsh -File .\skills\perforce-p4\scripts\p4-init.ps1 -Server perforce.example:1666 -User liuyang -ProjectStream //streammain/dev -Sync
+```
 
 ## Day-2 Command Entry Point
 
@@ -92,5 +101,6 @@ For branch or stream merges, conflict handling, or submit preparation, read [ref
 - Prefer existing branch specs, stream specs, and workspace mappings over inventing new depot paths.
 - Do not submit automatically unless the user asked for the submit.
 - Avoid printing secrets back to the user.
-- If the server uses `ssl:`, handle trust explicitly before retrying the command.
+- If the server uses `ssl:`, check trust explicitly before login or workspace creation. Do not guess the trust decision.
 - During onboarding, do not guess engine stream, workspace naming rules, or local root paths when the team doc is incomplete.
+- For large workspaces, stop after creation and ask whether the user wants to continue in P4V. Do not start command-line `sync` unless they explicitly asked for it.
