@@ -113,6 +113,8 @@ For unfamiliar commands, flags, or edge-case behavior:
 ## Merge And Resolve
 
 For branch or stream merges, conflict handling, or submit preparation, read [references/merge-and-resolve.md](references/merge-and-resolve.md) and follow that workflow.
+Use [scripts/Reopen-P4Changelist.py](scripts/Reopen-P4Changelist.py) to move opened files into one target changelist before resolve/submit, and [scripts/Check-P4MergeReady.py](scripts/Check-P4MergeReady.py) to verify `default` is empty and unresolved files are gone.
+For child-to-parent stream copy work, prefer [scripts/Invoke-P4StreamUpCopy.py](scripts/Invoke-P4StreamUpCopy.py). It defaults to dry-run, checks parent-to-child merge debt, verifies source/target workspaces, runs safe resolve only, and emits JSON for agent-readable recovery.
 
 ## Guardrails
 

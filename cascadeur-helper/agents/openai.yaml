@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cascadeur Helper"
+  short_description: "查 Cascadeur 文档并给新手可执行步骤"
+  default_prompt: "Use $cascadeur-helper to look up Cascadeur docs and explain a beginner-safe workflow for this animation task."
+
+policy:
+  allow_implicit_invocation: true

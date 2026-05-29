@@ -1,0 +1,4 @@
+interface:
+  display_name: "s&box API"
+  short_description: "用本地 schema 工具查询 s&box API"
+  default_prompt: "Use $sbox-api to refresh local s&box schema and verify Sandbox types or members before writing gameplay C# code."
