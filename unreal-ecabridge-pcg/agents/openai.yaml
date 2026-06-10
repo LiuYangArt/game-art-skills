@@ -1,0 +1,3 @@
+display_name: Unreal ECABridge PCG
+short_description: Reusable ECABridge workflow for Paralogue PCG graph authoring.
+default_prompt: Use this skill to create, edit, or validate Unreal PCG graphs via ECABridge. Inspect the target graph first, avoid hardcoded graph paths, support reusable scatter parameters such as OffsetRange and RotationRange, handle PCGVolume overlap exclusion, and report P4 state.
