@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unreal PCG HLSL Node"
+  short_description: "Generate PCG Custom HLSL node artifacts."
+  default_prompt: "Use $unreal-pcg-hlsl-node to generate a PCG Custom HLSL node for this Unreal PCG task."
